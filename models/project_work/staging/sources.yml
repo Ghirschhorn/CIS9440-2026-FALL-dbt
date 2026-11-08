@@ -1,0 +1,15 @@
+version: 2
+sources:
+  - name: project_raw
+    description: Raw data loaded from NYC Open Data
+    database: geraldinehirschhorn-cis-baruch
+    schema: nyc_project_raw_data
+    tables:
+      - name: source_service_requests_dataset
+        description: |
+          NYC 311 service requests for Dept of Health and Mental Hygiene.
+          One row per service request.
+      - name: dohmh_restaurant_inspection_data
+        description: |
+          NYC record of restaurant inspections provided by DOHMH.
+          One row per restaurant inspection/violation.
