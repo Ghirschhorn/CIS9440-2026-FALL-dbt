@@ -1,6 +1,6 @@
 version: 2
 sources:
-  - name: project_raw
+  - name: raw
     description: Raw data loaded from NYC Open Data
     database: geraldinehirschhorn-cis-baruch
     schema: nyc_project_raw_data
