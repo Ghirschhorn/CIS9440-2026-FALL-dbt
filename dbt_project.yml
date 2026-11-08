@@ -1,40 +1,61 @@
-name: 'nyc_analytics'
-version: '1.0.0'
+name: nyc_analytics
+version: 1.0.0
 config-version: 2
-# Some default settings for dbt
-profile: 'default'
-
-model-paths: ["models"]
-analysis-paths: ["analyses"]
-test-paths: ["tests"]
-seed-paths: ["seeds"]
-macro-paths: ["macros"]
-snapshot-paths: ["snapshots"]
-
-target-path: "target"
+profile: default
+model-paths:
+  - models
+analysis-paths:
+  - analyses
+test-paths:
+  - tests
+seed-paths:
+  - seeds
+macro-paths:
+  - macros
+snapshot-paths:
+  - snapshots
+target-path: target
 clean-targets:
- - "target"
- - "dbt_packages"
+  - target
+  - dbt_packages
 
-# Set up models, which are basically SQL files, to create tables
+# Set up models
 models:
- nyc_analytics:
-   +materialized: table
+  nyc_analytics:
+    +materialized: 
+    
+    assignment_work:
+      staging:
+        +materialized: table
+        +schema: nyc_homework_staging
 
-   assignment_work:
-     staging:
-       +materialized: table
-       +schema: nyc_homework_staging
+      marts:
+        +materialized: table
+        +schema: nyc_homework_warehouse_marts
 
-     marts:
-       +materialized: table
-       +schema: nyc_homework_warehouse_marts
-      
-       conformed:
-         +materialized: table
+        conformed:
+          +materialized: table
 
-       dob_job_filings:
-         +materialized: table
+        dob_job_filings:
+          +materialized: table
 
-       dot_311:
-         +materialized: table
+        dot_311:
+          +materialized: table
+
+    project_work: # setting up model for project
+      staging:
+        +materialized: table
+        +schema: project_staging_data
+
+      marts:
+        +materialized: table
+        +schema: project_warehouse_marts
+
+        conformed:
+          +materialized: table
+
+        restaurant_inspection:
+          +materialized: table
+          
+        dohmh_311:
+          +materialized: table
