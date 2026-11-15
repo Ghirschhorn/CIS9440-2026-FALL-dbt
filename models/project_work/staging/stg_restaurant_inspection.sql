@@ -23,6 +23,7 @@ cleaned AS (
         CAST(camis AS STRING) AS restaurant_id,
         CAST(dba AS STRING) AS restaurant_name,
 
+        -- Cleaning cuising_tupe (NULL, blank, and Not Listed to become "Unknown")
         CASE
             WHEN cuisine_description IS NULL
                 OR TRIM(cuisine_description) = ''
@@ -30,24 +31,6 @@ cleaned AS (
             THEN 'Unknown'
             ELSE TRIM(CAST(cuisine_description AS STRING))
         END AS cuisine_type,
-
-        -- Grouping similar cuisine types (new variable)
-        CASE
-            WHEN cuisine_description IN ('Creole', 'Cajun', 'Creole/Cajun') THEN 'Creole/Cajun'
-            WHEN cuisine_description IN ('Hotdogs', 'Hotdogs/Pretzels') THEN 'Hotdogs'
-            WHEN cuisine_description IN ('Sandwiches', 'Salads', 'Soups',
-                'Sandwiches/Salads/Mixed Buffet', 'Soups/Salads/Sandwiches') THEN 'Sandwiches/Salads/Soups'
-            WHEN cuisine_description IN ('French', 'New French', 'Haute Cuisine') THEN 'French'
-            WHEN cuisine_description IN ('Vegan', 'Vegetarian') THEN 'Vegetarian/Vegan'
-            WHEN cuisine_description IN ('Bakery Products/Desserts', 'Frozen Desserts', 'Donuts',
-                'Bagels/Pretzels', 'Pancakes/Waffles', 'Nuts/Confectionary') THEN 'Bakery/Desserts'
-            WHEN cuisine_description IN ('Coffee/Tea', 'Juice, Smoothies, Fruit Salads',
-                'Bottled Beverages') THEN 'Beverages'
-            WHEN cuisine_description IN ('Polish', 'Russian', 'Czech', 'Eastern European') THEN 'Eastern European'
-            WHEN cuisine_description IN ('Lebanese', 'Egyptian', 'Iranian', 'Turkish',
-                'Armenian', 'Middle Eastern') THEN 'Middle Eastern'
-            ELSE cuisine_description
-        END AS cuisine_group,
         
         -- Time/date columns
         CAST(inspection_date AS TIMESTAMP) AS inspection_date,
@@ -96,6 +79,7 @@ cleaned AS (
             WHEN UPPER(TRIM(critical_flag)) = 'NOT CRITICAL' THEN FALSE
             ELSE NULL
         END AS is_critical,
+
         -- Shortening phrases in action variable
         CASE
             WHEN LOWER(action) LIKE '%re-opened%' THEN 'REOPENED BY DOHMH'
@@ -117,7 +101,31 @@ cleaned AS (
     AND boro IS NOT NULL
 
     -- Deduplicate
-    -- All drops rows appear to be actual duplicates (aroun 6,900 rows dropped)
+    -- All drops rows appear to be actual duplicates (around 6,900 rows dropped)
     QUALIFY ROW_NUMBER() OVER (PARTITION BY camis, inspection_date, violation_code, inspection_type ORDER BY record_date DESC) = 1
-)
-SELECT * FROM cleaned
+),
+
+
+ -- Grouping similar cuisine types (using CLEANED cuisine_type) so every "Unknown" gets the same group
+ with_cuisine_group AS(
+    SELECT *,
+        CASE
+            WHEN cuisine_type IN ('Creole', 'Cajun', 'Creole/Cajun') THEN 'Creole/Cajun'
+            WHEN cuisine_type IN ('Hotdogs', 'Hotdogs/Pretzels') THEN 'Hotdogs'
+            WHEN cuisine_type IN ('Sandwiches', 'Salads', 'Soups',
+                'Sandwiches/Salads/Mixed Buffet', 'Soups/Salads/Sandwiches') THEN 'Sandwiches/Salads/Soups'
+            WHEN cuisine_type IN ('French', 'New French', 'Haute Cuisine') THEN 'French'
+            WHEN cuisine_type IN ('Vegan', 'Vegetarian') THEN 'Vegetarian/Vegan'
+            WHEN cuisine_type IN ('Bakery Products/Desserts', 'Frozen Desserts', 'Donuts',
+                'Bagels/Pretzels', 'Pancakes/Waffles', 'Nuts/Confectionary') THEN 'Bakery/Desserts'
+            WHEN cuisine_type IN ('Coffee/Tea', 'Juice, Smoothies, Fruit Salads',
+                'Bottled Beverages') THEN 'Beverages'
+            WHEN cuisine_type IN ('Polish', 'Russian', 'Czech', 'Eastern European') THEN 'Eastern European'
+            WHEN cuisine_type IN ('Lebanese', 'Egyptian', 'Iranian', 'Turkish',
+                'Armenian', 'Middle Eastern') THEN 'Middle Eastern'
+            ELSE cuisine_type
+        END AS cuisine_group
+    FROM cleaned
+ )
+
+SELECT * FROM with_cuisine_group
