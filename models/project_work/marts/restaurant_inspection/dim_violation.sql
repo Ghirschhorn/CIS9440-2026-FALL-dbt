@@ -24,7 +24,8 @@ enriched AS (
         -- Derived: TRUE when the inspector flagged the violation as critical
         CASE
             WHEN UPPER(TRIM(critical_flag)) = 'CRITICAL' THEN TRUE
-            ELSE FALSE
+            WHEN UPPER(TRIM(critical_flag)) = 'NOT CRITICAL' THEN FALSE
+            ELSE NULL
         END AS is_critical
 
     FROM distinct_violations
